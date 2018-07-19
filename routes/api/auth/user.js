@@ -4,6 +4,7 @@ import * as controller from './user.controller';
 
 const router = asyncify(express.Router());
 
-router.post('/signup', controller.localRegister);
+router.post('/signup', controller.signup);
+router.post('/signin', controller.signin);
 
 export default router;
