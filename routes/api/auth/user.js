@@ -6,5 +6,6 @@ const router = asyncify(express.Router());
 
 router.post('/signup', controller.signup);
 router.post('/signin', controller.signin);
+router.get('/logout', controller.logout);
 
 export default router;

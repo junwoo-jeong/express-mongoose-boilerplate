@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    var data = JSON.stringify({
+      email: 'wnsdnek778@naver.com',
+      password: '123123'
+    });
+
+    var result = fetch('http://localhost:3001/api/auth/user/signin',{
+      method: 'post',
+      headers: {'Content-Type':'application/json'},
+      body: data
+    }).then(res => res.json()).then(data => console.log(data)).catch(err => console.log(err));
+  
+  </script>
+</body>
+</html>

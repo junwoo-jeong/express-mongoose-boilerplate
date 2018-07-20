@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 
 // import routes modules
 import routes from './routes';
+import { authMiddleware } from './middleware/auth';
 
 const app = express();
 
@@ -26,16 +27,22 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 
 // set path
 app.use(express.static(path.join(__dirname, 'public')));
 
 // set route
 app.use('/', routes);
-app.get('/test', (req, res) => {
-  res.json({
-    success: "asd"
-  });
-});
 
+app.use('/test', authMiddleware);
+app.get('/test', (req, res) => {
+  console.log('유저 검증 완료!');
+  res.send("asdasdas");
+  res.end();
+})
 module.exports = app;

@@ -44,6 +44,12 @@ User.statics.register = function ({
 
 User.methods.generateToken = function() {
   const {_id, displayName } = this;
-  return 
-}
+  return generateToken({
+    user: {
+      _id,
+      displayName
+    }
+  }, 'user');
+};
+
 module.exports = mongoose.model('User', User);
