@@ -14,7 +14,7 @@ import { authMiddleware } from './middleware/auth';
 const app = express();
 
 // connect mongoDB
-mongoose.Promise = global.Promise;
+mongoose.Promise = global.Promise;// using mongoose promise
 const db = mongoose.connection;
 db.on('error', console.error);
 db.once('open', () => {

@@ -1,7 +1,9 @@
 import User from '../../../models/user.model';
 import { generateHash, compareHash } from '../../../lib/bcrypt';
+import { isEmail, isPassword, isDisplayName } from '../../../lib/validation';
+import { Map, List } from 'immutable';
 
-/*
+/*****************************************
 *  URL: api/auth/user/signup
 *  method: POST
 *  data: {
@@ -10,109 +12,104 @@ import { generateHash, compareHash } from '../../../lib/bcrypt';
 *    email: body.email,
 *    password: body.password
 *  }
-*/
+*****************************************/
 export const signup = async (req, res) => {
   const body = req.body;
+  let status = Map({
+    success: true,
+    errors: Map({})
+  });
 
-  // checking body property
-  if(!(body.email && body.name && body.displayName && body.password)) {
-    return res.json({
-      success: false,
-      message: "필수 항목이 누락되었습니다."
-    })
-  }
-  
-  // checking email
-  if(await User.findByEmail(body.email)){
-    console.log("이미등록이메일");
-    return res.json({
-      success: false,
-      message: "이미 등록된 이메일 입니다."
+  status = body.email ? status : status.setIn(['errors', 'email'], Map({ message: "이메일이 누락되었습니다."}));
+  status = body.name ? status : status.setIn(['errors', 'name'], Map({ message: "이름이 누락되었습니다."}));
+  status = body.displayName ? status : status.setIn(['errors', 'displayName'], Map({ message: "닉네임이 누락되었습니다."}));
+  status = body.password ? status : status.setIn(['errors', 'password'], Map({ message: "비밀번호가 누락되었습니다."}));
+
+  await User.findByEmail(body.email)
+    .then(result => {
+      if(!result) {
+        status = isEmail(body.email) ? 
+          status :
+          status.setIn(['errors', 'email'], Map({ message: "사용하실 수 없는 이메일 입니다."}));
+      }else {
+        status = status.setIn(['errors', 'email'], Map({ message: "이미 가입된 이메일 입니다."}));
+      }
+  });
+
+  await User.findByDisplayName(body.displayName)
+    .then(result => {
+      if (!result) {
+        status = isDisplayName(body.displayName) ? 
+          status :
+          status.setIn(['errors', 'displayName'], Map({ message: "사용하실 수 없는 닉네임 입니다."}));  
+      }else {
+        status = status.setIn(['errors', 'displayName'], Map({ message: "이미 가입된 닉네임 입니다."}));
+      }
     });
-  };
 
-  //checking displayName 
-  if(await User.findByDisplayName(body.displayName)){
-    console.log("이미등록 이름");
-    return res.json({
-      success: false,
-      message: "이미 등록된 사용자이름 입니다."
-    });
-  }
-  // hashing password
-  const hash = await generateHash(req.body.password);
+  status = isPassword(body.password) ? status : status.setIn(['errors', 'password'], Map({ message: "사용하실 수 없는 비밀번호입니다."}));
   
-  // user schema create 
-  const user = {
-    email: req.body.email,
-    name: req.body.name,
-    displayName: req.body.displayName,
-    password: hash
-  };
+  const isSuccess = !status.get('errors').count();
 
-  // try user resgister
-  try {
-    // regist success
+  if(isSuccess) {
+    const hash = await generateHash(body.password);
+
+    const user = {
+      email: body.email,
+      name: body.name,
+      displayName: body.displayName,
+      password: hash
+    };
     await User.register(user);
-    
-    console.log("성공");
-    res.json({
-      success: true,
-      message: "회원 가입에 성공했습니다."
-    });
-  }catch(error){
-    // regist fail
-    throw error;
+    res.json(status.toJSON());
+  }else {
+    status = status.set('success', false);
+    res.json(status.toJSON());
   }
 }
 
-/*
+/********************************************
 *  URL: api/auth/user/signin
 *  method: POST
 *  data: {
 *    email: body.email,
 *    password: body.password
 *  }
-*/
+*********************************************/
 export const signin = async (req, res) => {
   const body = req.body;
-  
   const user = await User.findByEmail(body.email);
-  
+  let status = Map({
+    success: true,
+    errors: Map({})
+  });
+
   // 이메일 일치 여부 확인
-  if(!user){
-    return res.json({
-      success: false,
-      message: "아이디가 일치하지 않습니다."
-    });
-  };
+  status = user ? status : status.setIn(['errors', 'email'], Map({message: "이메일이 일치하지 않습니다."}));
 
   //비밀번호 일치 여부 확인
   const compare = await compareHash(user.password, body.password);
 
-  if(!compare){
-    //비밀번호가 일치하지 않는 경우
-    return res.json({
-      success: false,
-      message: "비밀번호가 일치하지 않습니다."
-    });
-  } else {
+  if(compare){
     //비밀번호가 일치하는 경우
     const access_token = await user.generateToken();
-    console.log(access_token);
     
     res.cookie('access_token', access_token, {
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 7 
       }
     );
-    res.json({
-      success: true,
-      message: "로그인 성공"
-    });
+    res.json(status.toJSON());
+  } else {
+    //비밀번호가 일치하지 않는 경우
+    status = status.set('success', false);
+    return res.json(status.toJSON());
   }
 }
-
+/********************************************
+*  URL: api/auth/user/logout
+*  method: GET
+*********************************************/
 export const logout = async (req, res) => {
   if(!req.cookies.access_token){
     return res.json({
