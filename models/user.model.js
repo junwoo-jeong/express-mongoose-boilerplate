@@ -29,6 +29,15 @@ User.statics.findByEmail = function(email) {
   });
 };
 
+User.statics.findByEmailOrDisplayName = function(email, displayName) {
+  return this.find({
+    $or : [
+      { "email": "wnsdnek778@naver.com" }, 
+      { "displayName":"word" }
+    ]
+  });
+}
+
 User.statics.register = function ({
   email, password, name, displayName,
 }) {
@@ -43,7 +52,7 @@ User.statics.register = function ({
 };
 
 User.methods.generateToken = function() {
-  const {_id, displayName } = this;
+  const { _id, displayName } = this;
   return generateToken({
     user: {
       _id,
@@ -51,5 +60,6 @@ User.methods.generateToken = function() {
     }
   }, 'user');
 };
+
 
 module.exports = mongoose.model('User', User);

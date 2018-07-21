@@ -1,6 +1,6 @@
 import User from '../../../models/user.model';
 import { generateHash, compareHash } from '../../../lib/bcrypt';
-import { generateToken } from '../../../lib/auth';
+
 /*
 *  URL: api/auth/user/signup
 *  method: POST
@@ -16,7 +16,6 @@ export const signup = async (req, res) => {
 
   // checking body property
   if(!(body.email && body.name && body.displayName && body.password)) {
-    console.log("누락");
     return res.json({
       success: false,
       message: "필수 항목이 누락되었습니다."
