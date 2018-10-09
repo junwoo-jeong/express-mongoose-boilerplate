@@ -41,7 +41,7 @@ app.use('/', routes);
 
 app.use('/test', authMiddleware);
 app.get('/test', (req, res) => {
-  console.log('유저 검증 완료!');
+  console.log('유저 검증 ');
   res.send("asdasdas");
   res.end();
 })
